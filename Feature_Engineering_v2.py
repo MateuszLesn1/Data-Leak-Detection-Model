@@ -2,6 +2,7 @@
 from pyspark.sql import functions as F
 from pyspark.sql import Window
 import os
+import csv
 
 # COMMAND ----------
 
@@ -36,20 +37,18 @@ repo_root = os.path.dirname(notebook_path)
 # COMMAND ----------
 
 # Risky domains 
-risky_domain_path = os.path.join(current_directory, "risky_domains.csv")
-risky_domains_df = spark.read.csv(risky_domain_path, header=True, inferSchema=True)
-risky_domains_df = risky_domains_df.withColumn(
-    "Domains",
-    F.explode(F.split(F.col("Domain"), r",\s*"))
-)
-risky_domains_list = [row[0] for row in risky_domains_df.select("Domains").collect()]
+with open(f"/Workspace{repo_root}/risky_domains.csv") as f:
+    risky_domains_list = [row["Domain"].strip() for row in csv.DictReader(f)]
 risky_domains_pattern = "|".join([d.replace(".", r"\.") for d in risky_domains_list])
 
-# Sensitive keywords
-keywords_path = os.path.join(current_directory, "sensitive_keywords.csv")
-keywords_df = spark.read.csv(keywords_path, header=True, inferSchema=True)
-keyword_list = [row[0].lower() for row in keywords_df.select("keyword").collect()]
+#Sensitive keywords
+with open(f"/Workspace{repo_root}/sensitive_keywords.csv") as f:
+    keyword_list = [row["keyword"].strip().lower() for row in csv.DictReader(f)]
 keyword_pattern = "|".join(keyword_list)
+
+# COMMAND ----------
+
+
 
 # COMMAND ----------
 
@@ -328,3 +327,7 @@ display(df_features.filter(F.col("user_upload_count_24h") > 10))
 # COMMAND ----------
 
 display(df_features.filter(F.col("is_high_risk_position") == 1).select("Position").distinct())
+
+# COMMAND ----------
+
+display(df_features.select("ActionType"))
