@@ -6,12 +6,22 @@ import csv
 
 # COMMAND ----------
 
-table_path = "workspace.default.cloud_app_events_banking_dlp"
-current_directory = os.getcwd()
-df = spark.table(table_path)
+spark.sql("SHOW TABLES IN workspace.default").show(truncate=False)
+
+# COMMAND ----------
+
+#Created 2nd mock data table with more realistic data, since accuracy for model was too perfect. In future will come up with more elegent solution.
+df_v1 = spark.table("workspace.default.cloud_app_events_banking_dlp")
+df_v2 = spark.table("workspace.default.cloud_app_events_banking_dlp_v_2")
+
+df = df_v1.union(df_v2)
 
 notebook_path = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
 repo_root = os.path.dirname(notebook_path)
+
+print(f"v1 rows: {df_v1.count()}")
+print(f"v2 rows: {df_v2.count()}")
+print(f"Combined rows: {df.count()}")
 
 # COMMAND ----------
 
@@ -45,10 +55,6 @@ risky_domains_pattern = "|".join([d.replace(".", r"\.") for d in risky_domains_l
 with open(f"/Workspace{repo_root}/sensitive_keywords.csv") as f:
     keyword_list = [row["keyword"].strip().lower() for row in csv.DictReader(f)]
 keyword_pattern = "|".join(keyword_list)
-
-# COMMAND ----------
-
-
 
 # COMMAND ----------
 
@@ -298,6 +304,10 @@ df_features_clean = (
 print(f"Final feature rows: {df_features_clean.count()}")
 df_features_clean.groupBy("Risk_Label").count().show()
 display(df_features_clean.limit(100))
+
+# COMMAND ----------
+
+df_features_clean.write.mode("overwrite").saveAsTable("workspace.default.dlp_features_clean")
 
 # COMMAND ----------
 
