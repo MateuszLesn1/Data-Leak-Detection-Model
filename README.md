@@ -31,13 +31,15 @@ Mock dataset based on realistic banking DLP patterns, combining two versions:
 ## Project Structure
 
 ```
-├── Feature_Engineering_v2.ipynb   # Feature engineering pipeline
-├── Model_Training_v1.ipynb        # Model training, evaluation and explainability
-├── risky_domains.csv              # Blacklist of non-business sanctioned domains
-├── sensitive_keywords.csv         # Sensitive keywords matched against file names
+├── Feature_Engineering_v2.ipynb      # Feature engineering pipeline
+├── Model_Training_GBT.ipynb          # GBT model training, evaluation and explainability
+├── Model_Training_CatBoost.ipynb     # CatBoost model with early stopping
+├── Model_Comparison.ipynb            # GBT vs CatBoost side by side comparison
+├── risky_domains.csv                 # Blacklist of non-business sanctioned domains
+├── sensitive_keywords.csv            # Sensitive keywords matched against file names
 └── data/
-    └── CloudAppEvents_BankingDLP.csv   # Original dataset
-    └── CloudAppEvents_BankingDLP_v2.csv # Mock dataset
+    ├── CloudAppEvents_BankingDLP.csv     # Original dataset (1000 events)
+    └── CloudAppEvents_BankingDLP_v2.csv  # Realistic mock dataset (5000 events)
 ```
 
 
@@ -79,4 +81,62 @@ Mock dataset based on realistic banking DLP patterns, combining two versions:
 ---
 
 ## Model
-WIP...
+
+Two models trained and compared side by side in `Model_Comparison.ipynb`.
+
+### GBT (Gradient Boosting Trees)
+Baseline model using sklearn's `GradientBoostingClassifier` with `OrdinalEncoder` for categorical features.
+
+```python
+GradientBoostingClassifier(n_estimators=100, max_depth=3, learning_rate=0.1, random_state=42)
+```
+
+### CatBoost
+CatBoost with native categorical handling and early stopping to prevent overfitting.
+
+```python
+CatBoostClassifier(iterations=500, depth=3, learning_rate=0.1, eval_metric="AUC", early_stopping_rounds=50)
+```
+
+---
+
+## Results
+
+Evaluated on a held-out 20% test set (1,200 events, stratified split):
+
+| Metric | GBT | CatBoost | Winner |
+|---|---|---|---|
+| AUC-ROC | 0.9326 | 0.9340 | CatBoost |
+| AUC-PR | 0.8624 | 0.8643 | CatBoost |
+| Precision (class 1) |  0.7966 | 0.7826  | GBT |
+| Recall (class 1) | 0.7264 | 0.7358 | CatBoost |
+| False Positives | 59 | 65 | GBT |
+| False Negatives | 87 | 84 | CatBoost |
+
+Takeaway: Both models perform similarly. CatBoost has a marginal edge on AUC-ROC and AUC-PR and catches 3 more real incidents. GBT generates fewer false alarms. For DLP where missing an incident is more costly than a false alarm, CatBoost is the preferred model.
+
+---
+
+## Explainability
+
+Individual predictions explained using SHAP, showing exactly which features pushed the risk probability up or down for each event.
+
+Example SHAP output (probability: 0.46):
+
+| Feature | Value | SHAP Value |
+|---|---|---|
+| file_extension | csv | +1.25 |
+| file_name_has_sensitive_keyword | 1 | +0.98 |
+| is_monday_or_friday | 1 | +0.16 |
+| Position | System Architect | +0.14 |
+| is_after_hours | 0 | -0.22 |
+| is_risky_target_domain | 0 | -0.77 |
+
+---
+
+## Tech Stack
+
+- **Platform:** Databricks Serverless
+- **Data processing:** PySpark, Delta tables, Unity Catalog
+- **Modelling:** scikit-learn, CatBoost
+- **Explainability:** SHAP
