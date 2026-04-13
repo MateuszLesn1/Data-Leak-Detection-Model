@@ -340,4 +340,8 @@ display(df_features.filter(F.col("is_high_risk_position") == 1).select("Position
 
 # COMMAND ----------
 
+display(df_features.filter(F.col("Risk_Label") == 0).count())
+
+# COMMAND ----------
+
 display(df_features.select("ActionType"))
