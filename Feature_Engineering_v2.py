@@ -47,12 +47,12 @@ print(f"Combined rows: {df.count()}")
 # COMMAND ----------
 
 # Risky domains 
-with open(f"/Workspace{repo_root}/risky_domains.csv") as f:
+with open(f"/Workspace{repo_root}/reference_data/risky_domains.csv") as f:
     risky_domains_list = [row["Domain"].strip() for row in csv.DictReader(f)]
 risky_domains_pattern = "|".join([d.replace(".", r"\.") for d in risky_domains_list])
 
 #Sensitive keywords
-with open(f"/Workspace{repo_root}/sensitive_keywords.csv") as f:
+with open(f"/Workspace{repo_root}/reference_data/sensitive_keywords.csv") as f:
     keyword_list = [row["keyword"].strip().lower() for row in csv.DictReader(f)]
 keyword_pattern = "|".join(keyword_list)
 
@@ -345,3 +345,7 @@ display(df_features.filter(F.col("Risk_Label") == 0).count())
 # COMMAND ----------
 
 display(df_features.select("ActionType"))
+
+# COMMAND ----------
+
+display(df_features.filter(F.col("ACTION_ID") == "1001"))
