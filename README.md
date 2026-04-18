@@ -31,17 +31,31 @@ Mock dataset based on realistic banking DLP patterns, combining two versions:
 ## Project Structure
 
 ```
+├── pipeline/
+│   ├── Random_Event_Generator.ipynb   # Daily event generation
+│   └── Scoring_Catboos.ipynb          # Daily model CatBoost scoring
+├── reference_data/
+│   ├── risky_domains.csv              # Blacklisted domains
+│   ├── sensitive_keywords.csv         # Sensitive keywords for file name matching
+│   ├── safe_filenames.csv             # Safe filename pool for event generation
+│   └── risky_filenames.csv            # Risky filename pool for event generation
+├── data/
+│   ├── CloudAppEvents_BankingDLP.csv      # Original dataset (1000 events)
+│   └── CloudAppEvents_BankingDLP_v2.csv   # Realistic mock dataset (5000 events) + new events from Random_Event_Generator
 ├── Feature_Engineering_v2.ipynb      # Feature engineering pipeline
-├── Model_Training_GBT.ipynb          # GBT model training, evaluation and explainability
+├── Model_Training_GBT.ipynb          # GBT model training and evaluation
 ├── Model_Training_CatBoost.ipynb     # CatBoost model with early stopping
-├── Model_Comparison.ipynb            # GBT vs CatBoost side by side comparison
-├── risky_domains.csv                 # Blacklist of non-business sanctioned domains
-├── sensitive_keywords.csv            # Sensitive keywords matched against file names
-└── data/
-    ├── CloudAppEvents_BankingDLP.csv     # Original dataset (1000 events)
-    └── CloudAppEvents_BankingDLP_v2.csv  # Realistic mock dataset (5000 events)
+├── Model_Comparison.ipynb            # GBT vs CatBoost comparison
+└── README.md
 ```
 
+
+### Notebooks
+| Notebook | Description |
+|---|---|
+| `Random_Event_Generator.ipynb` | Generates 10-50 synthetic events, appends to Delta table with deduplication |
+| `Feature_Engineering_v2.ipynb` | Engineers all features from raw events, writes to `dlp_features_clean` table |
+| `Scoring_CatBoost.ipynb` | Loads CatBoost model, scores new events, writes to `dlp_predictions` table |
 
 ## Features Engineered
 
@@ -100,7 +114,7 @@ CatBoostClassifier(iterations=500, depth=3, learning_rate=0.1, eval_metric="AUC"
 
 ---
 
-## Results
+## Results on original data
 
 Evaluated on a held-out 20% test set (1,200 events, stratified split):
 
@@ -137,6 +151,6 @@ Example SHAP output (probability: 0.46):
 ## Tech Stack
 
 - **Platform:** Databricks Serverless
-- **Data processing:** PySpark, Delta tables, Unity Catalog
-- **Modelling:** scikit-learn, CatBoost
+- **Data processing:** PySpark
+- **Modelling:** GBT, CatBoost
 - **Explainability:** SHAP
