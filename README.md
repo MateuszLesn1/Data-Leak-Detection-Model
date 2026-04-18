@@ -148,6 +148,15 @@ Example SHAP output (probability: 0.46):
 
 ---
 
+## Pipeline
+
+Automated daily pipeline orchestrated via Databricks Workflows.
+<img width="1568" height="237" alt="Successfull Run" src="https://github.com/user-attachments/assets/1c181e1a-c708-4857-8d5f-b90684f5ac6a" />
+
+
+
+---
+
 ## Tech Stack
 
 - **Platform:** Databricks Serverless
